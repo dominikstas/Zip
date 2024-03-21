@@ -1,9 +1,9 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import zipfile
 import os
 
-#Think about better name for that program
+# Think about better name for that program
 
 class ZipManagerApp:
     def __init__(self, root):
@@ -32,16 +32,20 @@ class ZipManagerApp:
                         for file in files:
                             file_path = os.path.join(root, file)
                             zipf.write(file_path, os.path.relpath(file_path, source_folder))
-                tk.messagebox.showinfo("Success", "Zipped successfully!")
+                messagebox.showinfo("Success", "Zipped successfully!")
 
     def unzip_files(self):
         zip_file = filedialog.askopenfilename(title="Select zip file", filetypes=(("ZIP files", "*.zip"),))
         if zip_file:
             unzip_folder = filedialog.askdirectory(title="Select folder to unzip files")
             if unzip_folder:
+                create_new_folder = messagebox.askyesno("Create New Folder", "Do you want to create a new folder for extraction?")
+                if create_new_folder:
+                    unzip_folder = os.path.join(unzip_folder, os.path.basename(zip_file).split('.')[0])
+                    os.makedirs(unzip_folder, exist_ok=True)
                 with zipfile.ZipFile(zip_file, 'r') as zipf:
                     zipf.extractall(unzip_folder)
-                tk.messagebox.showinfo("Success", "Files unzipped successfully!")
+                messagebox.showinfo("Success", "Files unzipped successfully!")
 
 
 if __name__ == "__main__":
