@@ -3,23 +3,30 @@ from tkinter import filedialog, messagebox
 import zipfile
 import os
 
-# Think about better name for that program
-
 class ZipManagerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Zip!")
+        self.root.geometry("400x200")  
+        self.root.configure(bg="#333333")  
 
-        self.frame = tk.Frame(self.root)
+       
+        window_width = self.root.winfo_reqwidth()
+        window_height = self.root.winfo_reqheight()
+        position_right = int(self.root.winfo_screenwidth() / 2 - window_width / 2)
+        position_down = int(self.root.winfo_screenheight() / 2 - window_height / 2)
+        self.root.geometry("+{}+{}".format(position_right, position_down))
+
+        self.frame = tk.Frame(self.root, bg="#333333")  
         self.frame.pack(padx=20, pady=20)
 
-        self.label = tk.Label(self.frame, text="Zip!", font=("Helvetica", 16))
+        self.label = tk.Label(self.frame, text="Zip!", font=("Helvetica", 20), fg="white", bg="#333333")  # Zmiana rozmiaru i koloru tekstu etykiety
         self.label.grid(row=0, column=0, columnspan=2, pady=10)
 
-        self.zip_button = tk.Button(self.frame, text="Zip", command=self.zip_files)
+        self.zip_button = tk.Button(self.frame, text="Zip", command=self.zip_files, bg="#555555", fg="white")  # Zmiana koloru tła i tekstu przycisku Zip
         self.zip_button.grid(row=1, column=0, padx=5, pady=5)
 
-        self.unzip_button = tk.Button(self.frame, text="Unzip", command=self.unzip_files)
+        self.unzip_button = tk.Button(self.frame, text="Unzip", command=self.unzip_files, bg="#555555", fg="white")  # Zmiana koloru tła i tekstu przycisku Unzip
         self.unzip_button.grid(row=1, column=1, padx=5, pady=5)
 
     def zip_files(self):
