@@ -11,11 +11,7 @@ class ZipManagerApp:
         self.root.configure(bg="#333333")
 
         # Centering the window
-        window_width = self.root.winfo_reqwidth()
-        window_height = self.root.winfo_reqheight()
-        position_right = int(self.root.winfo_screenwidth() / 2 - window_width / 2)
-        position_down = int(self.root.winfo_screenheight() / 2 - window_height / 2)
-        self.root.geometry("+{}+{}".format(position_right, position_down))
+        self.center_window()
 
         # Main frame
         self.frame = tk.Frame(self.root, bg="#333333")
@@ -36,6 +32,14 @@ class ZipManagerApp:
         self.progress = ttk.Progressbar(self.frame, orient='horizontal', mode='determinate', length=300)
         self.progress.grid(row=2, column=0, columnspan=2, pady=10)
 
+    def center_window(self):
+        self.root.update_idletasks()
+        window_width = self.root.winfo_width()
+        window_height = self.root.winfo_height()
+        position_right = int(self.root.winfo_screenwidth() / 2 - window_width / 2)
+        position_down = int(self.root.winfo_screenheight() / 2 - window_height / 2)
+        self.root.geometry(f"+{position_right}+{position_down}")
+
     def zip_files(self):
         source_folder = filedialog.askdirectory(title="Select folder to zip")
         if source_folder:
@@ -43,12 +47,16 @@ class ZipManagerApp:
             if zip_file_path:
                 try:
                     self.progress['value'] = 0
+                    files_to_zip = []
+                    for root, dirs, files in os.walk(source_folder):
+                        for file in files:
+                            files_to_zip.append(os.path.join(root, file))
+                    
+                    total_files = len(files_to_zip)
                     with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-                        for root, dirs, files in os.walk(source_folder):
-                            for file in files:
-                                file_path = os.path.join(root, file)
-                                zipf.write(file_path, os.path.relpath(file_path, source_folder))
-                                self.update_progress()
+                        for i, file in enumerate(files_to_zip):
+                            zipf.write(file, os.path.relpath(file, source_folder))
+                            self.update_progress(i + 1, total_files)
                     messagebox.showinfo("Success", "Zipped successfully!")
                 except Exception as e:
                     messagebox.showerror("Error", f"An error occurred while zipping: {e}")
@@ -65,16 +73,17 @@ class ZipManagerApp:
                 try:
                     self.progress['value'] = 0
                     with zipfile.ZipFile(zip_file, 'r') as zipf:
-                        zipf.extractall(unzip_folder)
-                        self.update_progress()
+                        total_files = len(zipf.infolist())
+                        for i, file in enumerate(zipf.infolist()):
+                            zipf.extract(file, unzip_folder)
+                            self.update_progress(i + 1, total_files)
                     messagebox.showinfo("Success", "Files unzipped successfully!")
                 except Exception as e:
                     messagebox.showerror("Error", f"An error occurred while unzipping: {e}")
 
-    #def update_progress(self):
-        # Update the progress bar (this is a simple placeholder logic)
-        #self.progress['value'] += 10
-        #self.root.update_idletasks()
+    def update_progress(self, current, total):
+        self.progress['value'] = (current / total) * 100
+        self.root.update_idletasks()
 
 if __name__ == "__main__":
     root = tk.Tk()
