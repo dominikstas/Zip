@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, simpledialog
 import zipfile
 import os
 from typing import List
@@ -55,8 +55,12 @@ class ZipManagerApp:
                         messagebox.showinfo("No Files", "The selected folder is empty.")
                         return
                     
-                    self.create_zip_file(zip_file_path, source_folder, files_to_zip)
-                    messagebox.showinfo("Success", "Zipped successfully!")
+                    # Get the maximum size limit from the user
+                    max_size_mb = simpledialog.askinteger("Max Size", "Enter the maximum size of each zip file in MB:", minvalue=1)
+                    if max_size_mb:
+                        max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
+                        self.create_multiple_zip_files(zip_file_path, source_folder, files_to_zip, max_size_bytes)
+                        messagebox.showinfo("Success", "Zipped successfully!")
                 except Exception as e:
                     messagebox.showerror("Error", f"An error occurred while zipping: {e}")
 
@@ -83,13 +87,36 @@ class ZipManagerApp:
                 files_to_zip.append(os.path.join(root, file))
         return files_to_zip
 
-    def create_zip_file(self, zip_file_path: str, source_folder: str, files_to_zip: List[str]) -> None:
+    def create_multiple_zip_files(self, zip_file_path: str, source_folder: str, files_to_zip: List[str], max_size_bytes: int) -> None:
         total_files = len(files_to_zip)
-        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-            for i, file in enumerate(files_to_zip):
-                zipf.write(file, os.path.relpath(file, source_folder))
-                self.update_progress(i + 1, total_files)
+        current_zip_index = 1
+        current_zip_size = 0
+        current_zip_files = []
+
+        def save_current_zip():
+            nonlocal current_zip_files, current_zip_index, current_zip_size
+            if current_zip_files:
+                zip_path = f"{os.path.splitext(zip_file_path)[0]}_{current_zip_index}.zip"
+                self.create_zip_file(zip_path, source_folder, current_zip_files)
+                current_zip_files = []
+                current_zip_index += 1
+                current_zip_size = 0
+
+        for i, file in enumerate(files_to_zip):
+            file_size = os.path.getsize(file)
+            if current_zip_size + file_size > max_size_bytes:
+                save_current_zip()
+            current_zip_files.append(file)
+            current_zip_size += file_size
+            self.update_progress(i + 1, total_files)
+
+        save_current_zip()
         self.reset_progress_bar()
+
+    def create_zip_file(self, zip_file_path: str, source_folder: str, files_to_zip: List[str]) -> None:
+        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+            for file in files_to_zip:
+                zipf.write(file, os.path.relpath(file, source_folder))
 
     def extract_zip_file(self, zip_file: str, unzip_folder: str) -> None:
         with zipfile.ZipFile(zip_file, 'r') as zipf:
